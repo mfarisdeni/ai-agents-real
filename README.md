@@ -1,8 +1,13 @@
-# ai-agents-real
+# internal-ai-agent-needs
 
-Interactive catalog of real, currently-available AI agents mapped to business divisions — built for **Quantaland Indonesia** (research by Faris D.).
+Internal AI agent needs board — a lightweight tool to identify and track AI agent
+opportunities across internal divisions.
 
-- `index.html` — self-contained single-file site (English): 50 AI agents across 9 division groups (General, QS/Contractor, Marketing, Architecture, Sales, Legal, Business Development, Finance & Accounting, HR & Procurement), each with division fit, real-world evidence, pricing notes, implementation difficulty (Easy/Medium/Hard), and source links. Includes search + division/difficulty filters.
-- Research snapshot: October 15, 2026 (web-index research; no hands-on product trials — figures come from vendor case studies, reported deployments, or independent tests as labeled).
+- `index.html` — the board (viewer). Loads its data from `data.json`.
+- `data.json` — the data store. Edit it directly or use the backend editor.
+- `backend/` — minimal static editor: edit/add rows, add tables, then download
+  the updated `data.json` and commit it. No server needed; git is the persistence layer.
+- `catalog/` — archived v1 AI agents catalog.
+- `list-view/` — archived v2 list-view catalog.
 
-Open `index.html` in a browser, or serve the repo with GitHub Pages.
+Deployed on Vercel from `main`.
