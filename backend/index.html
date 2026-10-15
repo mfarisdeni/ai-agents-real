@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Needs Data Backend — minimal editor</title>
+<style>
+  :root{--ink:#14231d;--muted:#56645e;--line:#d4dcd6;--bg:#f4f6f3;--accent:#087d57;--danger:#a83e34}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{background:var(--ink);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:16px;margin:0}
+  header p{margin:2px 0 0;font-size:12px;opacity:.75}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .tabs button{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:600}
+  .tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type=text],textarea{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;width:100%}
+  table{width:100%;border-collapse:collapse;margin:8px 0}
+  th,td{border:1px solid var(--line);padding:4px;vertical-align:top}
+  th input{font-weight:700}
+  td input{background:transparent;border-color:transparent}
+  td input:focus,th input:focus{border-color:var(--accent);background:#fff;outline:none}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.danger{color:var(--danger);border-color:var(--danger)}
+  .btn.small{padding:4px 8px;font-size:12px}
+  .hint{font-size:12px;color:var(--muted)}
+  #status{font-size:13px;margin-top:8px;min-height:20px}
+  #loader textarea{min-height:120px;font-family:monospace;font-size:12px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Needs Data Backend</h1><p>Minimal editor for the internal AI agent needs tables. No server — edits are saved by downloading <code>data.json</code> and committing it to the repo.</p></div>
+  <div><button class="btn primary" id="downloadBtn">Download data.json</button>
+  <button class="btn" id="copyBtn">Copy JSON</button></div>
+</header>
+<main>
+  <div class="card" id="loader">
+    <h3 style="margin-top:0">Load data</h3>
+    <div class="row">
+      <button class="btn" id="fetchBtn">Load from ../data.json</button>
+      <label class="btn">Upload JSON file <input type="file" id="fileInput" accept=".json" class="hidden"></label>
+      <button class="btn" id="pasteBtn">Paste JSON</button>
+      <button class="btn" id="templateBtn">Start from template</button>
+    </div>
+    <div id="pasteBox" class="hidden"><textarea id="pasteArea" placeholder='Paste {"tables": [...]} here'></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn primary" id="pasteLoad">Load pasted JSON</button></div></div>
+    <div id="status"></div>
+  </div>
+
+  <div class="card hidden" id="editor">
+    <div class="tabs" id="tableTabs"></div>
+    <div class="row">
+      <input type="text" id="tableTitle" style="max-width:300px" placeholder="Table title (division)">
+      <button class="btn small" id="addTableBtn">+ Table</button>
+      <button class="btn small danger" id="delTableBtn">Delete table</button>
+    </div>
+    <div style="overflow-x:auto"><table id="grid"></table></div>
+    <div class="row">
+      <button class="btn small" id="addRowBtn">+ Row</button>
+      <button class="btn small" id="addColBtn">+ Column</button>
+      <span class="hint">Tip: click any cell to edit. Delete a column from its header.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">How publishing works</h3>
+    <p class="hint">1. Edit here &rarr; 2. <b>Download data.json</b> &rarr; 3. Replace <code>data.json</code> at the repo root (or send the file to your agent to commit) &rarr; 4. Vercel redeploys automatically. Expected format: <code>{"tables":[{"id","title","columns":[],"rows":[[]]}]}</code></p>
+  </div>
+</main>
+<script>
+let db = {tables:[]}, cur = 0;
+const $ = id => document.getElementById(id);
+const status = m => $('status').textContent = m;
+
+function setData(d){
+  if(!d || !Array.isArray(d.tables)) throw new Error('JSON must look like {"tables":[{id,title,columns[],rows:[[]]}]}');
+  d.tables.forEach(t=>{ t.columns=t.columns||[]; t.rows=t.rows||[];
+    t.rows.forEach(r=>{ while(r.length<t.columns.length) r.push(''); });
+  });
+  db = d; cur = 0;
+  $('editor').classList.remove('hidden');
+  renderTabs(); renderGrid();
+  status('Loaded ' + db.tables.length + ' table(s).');
+}
+function curTable(){ return db.tables[cur]; }
+
+function renderTabs(){
+  const el = $('tableTabs'); el.innerHTML='';
+  db.tables.forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.textContent=t.title||('Table '+(i+1)); b.className=i===cur?'active':'';
+    b.onclick=()=>{cur=i;renderTabs();renderGrid();};
+    el.appendChild(b);
+  });
+}
+function renderGrid(){
+  const t=curTable(), g=$('grid'); g.innerHTML='';
+  if(!t){ $('tableTitle').value=''; return; }
+  $('tableTitle').value=t.title||'';
+  const thead=document.createElement('thead'), hr=document.createElement('tr');
+  t.columns.forEach((c,ci)=>{
+    const th=document.createElement('th');
+    const inp=document.createElement('input'); inp.type='text'; inp.value=c;
+    inp.onchange=e=>{t.columns[ci]=e.target.value;};
+    const del=document.createElement('button'); del.className='btn small danger'; del.textContent='×'; del.title='Delete column';
+    del.onclick=()=>{ if(confirm('Delete column "'+c+'"?')){ t.columns.splice(ci,1); t.rows.forEach(r=>r.splice(ci,1)); renderGrid(); } };
+    th.append(inp,del); hr.appendChild(th);
+  });
+  const thEnd=document.createElement('th'); thEnd.textContent=''; hr.appendChild(thEnd);
+  thead.appendChild(hr); g.appendChild(thead);
+  const tb=document.createElement('tbody');
+  t.rows.forEach((r,ri)=>{
+    const tr=document.createElement('tr');
+    r.forEach((cell,ci)=>{
+      const td=document.createElement('td');
+      const inp=document.createElement('input'); inp.type='text'; inp.value=cell;
+      inp.onchange=e=>{t.rows[ri][ci]=e.target.value;};
+      td.appendChild(inp); tr.appendChild(td);
+    });
+    const td=document.createElement('td');
+    const del=document.createElement('button'); del.className='btn small danger'; del.textContent='Delete';
+    del.onclick=()=>{ if(confirm('Delete row '+(ri+1)+'?')){ t.rows.splice(ri,1); renderGrid(); } };
+    td.appendChild(del); tr.appendChild(td); tb.appendChild(tr);
+  });
+  g.appendChild(tb);
+}
+
+$('fetchBtn').onclick=async()=>{
+  try{ const r=await fetch('../data.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    setData(await r.json());
+  }catch(e){ status('Could not load ../data.json ('+e.message+'). Upload a file or paste JSON instead.'); }
+};
+$('fileInput').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ setData(JSON.parse(rd.result)); }catch(err){ status('Invalid JSON: '+err.message); } };
+  rd.readAsText(f);
+};
+$('pasteBtn').onclick=()=>$('pasteBox').classList.toggle('hidden');
+$('pasteLoad').onclick=()=>{ try{ setData(JSON.parse($('pasteArea').value)); }catch(e){ status('Invalid JSON: '+e.message); } };
+$('templateBtn').onclick=()=>setData({tables:[{id:'sales',title:'Sales',columns:['Goal','Existing AI options','Custom build (difficulty & cost)','Max-result recommendation','Est. time'],rows:[['Build a website','Lovable, v0.dev, etc. (verify pricing)','Easy — free options exist','KIMI AI (paid) — strong website skill','1–2 days']]}]});
+$('tableTitle').onchange=e=>{ const t=curTable(); if(t){ t.title=e.target.value; renderTabs(); } };
+$('addTableBtn').onclick=()=>{
+  const id='t'+Date.now();
+  db.tables.push({id,title:'New division',columns:['Goal','Existing AI options','Custom build (difficulty & cost)','Max-result recommendation','Est. time'],rows:[['','','','','']]});
+  cur=db.tables.length-1; renderTabs(); renderGrid();
+};
+$('delTableBtn').onclick=()=>{ const t=curTable(); if(!t) return;
+  if(confirm('Delete table "'+t.title+'"?')){ db.tables.splice(cur,1); cur=Math.max(0,cur-1); renderTabs(); renderGrid(); } };
+$('addRowBtn').onclick=()=>{ const t=curTable(); if(!t) return;
+  t.rows.push(t.columns.map(()=>'',)); renderGrid(); };
+$('addColBtn').onclick=()=>{ const t=curTable(); if(!t) return;
+  const name=prompt('Column name:','New column'); if(name==null) return;
+  t.columns.push(name); t.rows.forEach(r=>r.push('')); renderGrid(); };
+$('downloadBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  status('data.json downloaded — replace the repo file and push to publish.');
+};
+$('copyBtn').onclick=async()=>{
+  try{ await navigator.clipboard.writeText(JSON.stringify(db,null,2)); status('JSON copied to clipboard.'); }
+  catch(e){ status('Copy failed — use Download instead.'); }
+};
+</script>
+</body>
+</html>
