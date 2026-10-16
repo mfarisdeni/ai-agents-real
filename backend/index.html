@@ -31,15 +31,24 @@
   #status{font-size:13px;margin-top:8px;min-height:20px}
   #loader textarea{min-height:120px;font-family:monospace;font-size:12px}
   .hidden{display:none}
+  #draftBar{display:none;background:#fff8e6;border:1px solid #e0c26a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px}
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Needs Data Backend</h1><p>Minimal editor for the internal AI agent needs tables. No server — edits are saved by downloading <code>data.json</code> and committing it to the repo.</p></div>
+  <div><h1>Needs Data Backend</h1><p>Minimal editor for the internal AI agent needs tables. Drafts auto-save in this browser. Publishing = download <code>data.json</code> → commit to repo.</p></div>
   <div><button class="btn primary" id="downloadBtn">Download data.json</button>
   <button class="btn" id="copyBtn">Copy JSON</button></div>
 </header>
 <main>
+  <div id="draftBar">
+    <span id="draftInfo"></span>
+    <div class="row" style="margin:8px 0 0">
+      <button class="btn small primary" id="restoreDraftBtn">Restore draft</button>
+      <button class="btn small danger" id="discardDraftBtn">Discard draft</button>
+    </div>
+  </div>
+
   <div class="card" id="loader">
     <h3 style="margin-top:0">Load data</h3>
     <div class="row">
@@ -51,6 +60,7 @@
     <div id="pasteBox" class="hidden"><textarea id="pasteArea" placeholder='Paste {"tables": [...]} here'></textarea>
     <div class="row" style="margin-top:8px"><button class="btn primary" id="pasteLoad">Load pasted JSON</button></div></div>
     <div id="status"></div>
+    <p class="hint" id="autosaveHint" style="margin:6px 0 0">Draft autosave: <span id="autosaveState">off (no data loaded yet)</span></p>
   </div>
 
   <div class="card hidden" id="editor">
@@ -64,19 +74,35 @@
     <div class="row">
       <button class="btn small" id="addRowBtn">+ Row</button>
       <button class="btn small" id="addColBtn">+ Column</button>
-      <span class="hint">Tip: click any cell to edit. Delete a column from its header.</span>
+      <span class="hint">Tip: click any cell to edit. Edits auto-save as a draft in this browser. Delete a column from its header.</span>
     </div>
   </div>
 
   <div class="card">
     <h3 style="margin-top:0">How publishing works</h3>
-    <p class="hint">1. Edit here &rarr; 2. <b>Download data.json</b> &rarr; 3. Replace <code>data.json</code> at the repo root (or send the file to your agent to commit) &rarr; 4. Vercel redeploys automatically. Expected format: <code>{"tables":[{"id","title","columns":[],"rows":[[]]}]}</code></p>
+    <p class="hint">1. Edit here (drafts auto-save in this browser, refresh-safe) &rarr; 2. <b>Download data.json</b> &rarr; 3. Replace <code>data.json</code> at the repo root (or send the file to your agent to commit) &rarr; 4. Vercel redeploys automatically. Expected format: <code>{"tables":[{"id","title","columns":[],"rows":[[]]}]}</code></p>
   </div>
 </main>
 <script>
-let db = {tables:[]}, cur = 0;
+let db = {tables:[]}, cur = 0, dirty = false;
 const $ = id => document.getElementById(id);
 const status = m => $('status').textContent = m;
+const DRAFT_KEY = 'needsBackendDraftV1';
+
+function saveDraft(){
+  if($('editor').classList.contains('hidden')) return;
+  try{
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({savedAt:new Date().toISOString(), db}));
+    dirty = true;
+    $('autosaveState').textContent = 'on — draft saved ' + new Date().toLocaleTimeString();
+  }catch(e){}
+}
+function loadDraft(){
+  try{ const raw = localStorage.getItem(DRAFT_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} dirty = false; }
+function markDirty(){ dirty = true; saveDraft(); }
+window.addEventListener('beforeunload', saveDraft);
 
 function setData(d){
   if(!d || !Array.isArray(d.tables)) throw new Error('JSON must look like {"tables":[{id,title,columns[],rows:[[]]}]}');
@@ -87,6 +113,7 @@ function setData(d){
   $('editor').classList.remove('hidden');
   renderTabs(); renderGrid();
   status('Loaded ' + db.tables.length + ' table(s).');
+  saveDraft();
 }
 function curTable(){ return db.tables[cur]; }
 
@@ -107,9 +134,9 @@ function renderGrid(){
   t.columns.forEach((c,ci)=>{
     const th=document.createElement('th');
     const inp=document.createElement('input'); inp.type='text'; inp.value=c;
-    inp.onchange=e=>{t.columns[ci]=e.target.value;};
+    inp.onchange=e=>{t.columns[ci]=e.target.value;markDirty();};
     const del=document.createElement('button'); del.className='btn small danger'; del.textContent='×'; del.title='Delete column';
-    del.onclick=()=>{ if(confirm('Delete column "'+c+'"?')){ t.columns.splice(ci,1); t.rows.forEach(r=>r.splice(ci,1)); renderGrid(); } };
+    del.onclick=()=>{ if(confirm('Delete column "'+c+'"?')){ t.columns.splice(ci,1); t.rows.forEach(r=>r.splice(ci,1)); renderGrid(); markDirty(); } };
     th.append(inp,del); hr.appendChild(th);
   });
   const thEnd=document.createElement('th'); thEnd.textContent=''; hr.appendChild(thEnd);
@@ -120,12 +147,12 @@ function renderGrid(){
     r.forEach((cell,ci)=>{
       const td=document.createElement('td');
       const inp=document.createElement('input'); inp.type='text'; inp.value=cell;
-      inp.onchange=e=>{t.rows[ri][ci]=e.target.value;};
+      inp.onchange=e=>{t.rows[ri][ci]=e.target.value;markDirty();};
       td.appendChild(inp); tr.appendChild(td);
     });
     const td=document.createElement('td');
     const del=document.createElement('button'); del.className='btn small danger'; del.textContent='Delete';
-    del.onclick=()=>{ if(confirm('Delete row '+(ri+1)+'?')){ t.rows.splice(ri,1); renderGrid(); } };
+    del.onclick=()=>{ if(confirm('Delete row '+(ri+1)+'?')){ t.rows.splice(ri,1); renderGrid(); markDirty(); } };
     td.appendChild(del); tr.appendChild(td); tb.appendChild(tr);
   });
   g.appendChild(tb);
@@ -146,29 +173,41 @@ $('fileInput').onchange=e=>{
 $('pasteBtn').onclick=()=>$('pasteBox').classList.toggle('hidden');
 $('pasteLoad').onclick=()=>{ try{ setData(JSON.parse($('pasteArea').value)); }catch(e){ status('Invalid JSON: '+e.message); } };
 $('templateBtn').onclick=()=>setData({tables:[{id:'sales',title:'Sales',columns:['Goal','Existing AI options','Custom build (difficulty & cost)','Max-result recommendation','Est. time'],rows:[['Build a website','Lovable, v0.dev, etc. (verify pricing)','Easy — free options exist','KIMI AI (paid) — strong website skill','1–2 days']]}]});
-$('tableTitle').onchange=e=>{ const t=curTable(); if(t){ t.title=e.target.value; renderTabs(); } };
+$('tableTitle').onchange=e=>{ const t=curTable(); if(t){ t.title=e.target.value; renderTabs(); markDirty(); } };
 $('addTableBtn').onclick=()=>{
-  const id='t'+Date.now();
-  db.tables.push({id,title:'New division',columns:['Goal','Existing AI options','Custom build (difficulty & cost)','Max-result recommendation','Est. time'],rows:[['','','','','']]});
-  cur=db.tables.length-1; renderTabs(); renderGrid();
+  db.tables.push({id:'t'+Date.now(),title:'New division',columns:['Goal','Existing AI options','Custom build (difficulty & cost)','Max-result recommendation','Est. time'],rows:[['','','','','']]});
+  cur=db.tables.length-1; renderTabs(); renderGrid(); markDirty();
 };
 $('delTableBtn').onclick=()=>{ const t=curTable(); if(!t) return;
-  if(confirm('Delete table "'+t.title+'"?')){ db.tables.splice(cur,1); cur=Math.max(0,cur-1); renderTabs(); renderGrid(); } };
+  if(confirm('Delete table "'+t.title+'"?')){ db.tables.splice(cur,1); cur=Math.max(0,cur-1); renderTabs(); renderGrid(); markDirty(); } };
 $('addRowBtn').onclick=()=>{ const t=curTable(); if(!t) return;
-  t.rows.push(t.columns.map(()=>'',)); renderGrid(); };
+  t.rows.push(t.columns.map(()=>'',)); renderGrid(); markDirty(); };
 $('addColBtn').onclick=()=>{ const t=curTable(); if(!t) return;
   const name=prompt('Column name:','New column'); if(name==null) return;
-  t.columns.push(name); t.rows.forEach(r=>r.push('')); renderGrid(); };
+  t.columns.push(name); t.rows.forEach(r=>r.push('')); renderGrid(); markDirty(); };
 $('downloadBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='data.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-  status('data.json downloaded — replace the repo file and push to publish.');
+  status('data.json downloaded — replace the repo file and push to publish. (Your draft stays saved in this browser.)');
 };
 $('copyBtn').onclick=async()=>{
   try{ await navigator.clipboard.writeText(JSON.stringify(db,null,2)); status('JSON copied to clipboard.'); }
   catch(e){ status('Copy failed — use Download instead.'); }
 };
+$('restoreDraftBtn').onclick=()=>{
+  const d=loadDraft();
+  if(d && d.db){ try{ setData(d.db); status('Draft restored (saved '+d.savedAt+').'); }catch(e){ status('Draft invalid: '+e.message); } }
+  $('draftBar').style.display='none';
+};
+$('discardDraftBtn').onclick=()=>{ clearDraft(); $('draftBar').style.display='none'; status('Draft discarded.'); };
+(function(){
+  const d=loadDraft();
+  if(d && d.db && d.db.tables && d.db.tables.length){
+    $('draftBar').style.display='block';
+    $('draftInfo').textContent='Found an unsaved draft from '+d.savedAt+' ('+d.db.tables.length+' table(s)). Restore it or start fresh.';
+  }
+})();
 </script>
 </body>
 </html>
