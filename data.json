@@ -1,1 +1,158 @@
-{"updated": "2026-10-16", "tables": [{"id": "sales", "title": "Sales", "columns": ["Goal", "Existing AI options", "Custom build (difficulty & cost)", "Max-result recommendation", "Est. time"], "rows": [["Build the company website with lead capture", "Lovable, v0.dev, Framer (verify current pricing)", "Easy — free options exist; medium if custom CMS", "Paid builder with strong site skill (e.g. KIMI AI) or via Fium on demand", "1–2 days"], ["Build the company brain (knowledge base)", "Notion, Slab, Guru (verify pricing); RAG via any LLM", "Medium — the hard part is structuring product data, not the tech", "Central Notion/wiki as source of truth + RAG answers grounded on it", "3–5 days"], ["Set up WhatsApp Business API (official channel)", "WATI, Respond.io, SleekFlow (verify pricing)", "Medium — BSP onboarding + webhook setup; ban-safe vs unofficial automation", "Official BSP; never use unofficial WA automation (ban risk)", "1–2 weeks"], ["Open distribution channel accounts", "Instagram, TikTok, Facebook Page, YouTube, Rumah123, 99.co, OLX, Google Business", "Easy — account setup + consistent branding kit", "Prioritize IG + TikTok + Rumah123/99.co for property", "2–3 days"], ["Sosmed content generator (on-demand via Fium)", "ChatGPT, Claude, CapCut", "Easy — prompt playbooks + brand voice doc", "Via Fium on demand with a brand-voice skill; no new subscription needed", "1–2 days setup"], ["Ad copy agent for Meta/Google Ads", "Jasper, Copy.ai, Anyword (verify pricing)", "Easy — hooks + offer angles from playbook", "Via Fium on demand; dedicated tool only when ad volume scales", "1 day"], ["SEO article agent (property blog)", "Surfer, Frase (verify pricing)", "Medium — needs keyword plan + review loop", "Via Fium on demand, 2–4 articles/month to start", "2–3 days setup"], ["WA lead qualifier bot (always-on)", "WATI/Respond.io bots, ManyChat (verify pricing)", "Medium — decision tree + link to company brain; escalates to manager", "Always-on bot on official WA API; manager takes over qualified leads", "1–2 weeks"], ["Website chatbot for Q&A + capture", "Tidio, Intercom, Crisp (verify pricing)", "Easy–Medium — ground answers on company brain", "Lightweight widget; same brain as WA bot", "3–5 days"], ["Follow-up sequence agent (always-on)", "WATI/Respond.io sequences", "Medium — timing rules + manager override on reply", "Time-based WA sequences; stops the moment a lead replies", "1 week"], ["Broadcast promo agent", "WA API broadcast via BSP", "Easy — segmented lists; manager approves copy first", "Monthly promo blasts to segmented lists only (no spam)", "2–3 days"], ["Proposal / quotation generator (on-demand via Fium)", "PandaDoc, Proposify (verify pricing)", "Easy — templates + live price tables", "Via Fium on demand from approved template", "2–3 days"], ["Payment scheme simulator (KPR / cash bertahap)", "Spreadsheet or custom calculator", "Easy — formulas + embed on website", "Simple web calculator prospects can try themselves", "2–4 days"], ["Meeting scheduler + reminders", "Cal.com (free), Calendly", "Easy — link on website + WA reminders", "Cal.com + automatic WA reminder H-1", "1–2 days"], ["Daily briefing agent (via Fium)", "Fium (on demand)", "Easy — pipeline sheet + morning prompt", "Manager asks each morning: pipeline summary + today's follow-ups", "1 day"], ["Objection-handling coach (via Fium)", "Fium (on demand)", "Easy — roleplay prompts from objection playbook", "Roleplay sessions before big meetings", "1 day"], ["Document checklist agent", "Fium (on demand)", "Easy — checklist per transaction type (KPR/cash)", "Checklist in company brain; Fium verifies completeness", "1–2 days"], ["Testimonial & referral agent", "Fium (on demand)", "Easy — request templates + tracking sheet", "Ask after handover; track referrals per customer", "1–2 days"], ["Weekly sales report generator (via Fium)", "Fium (on demand)", "Easy — reads pipeline data, writes summary", "Manager gets every Monday: leads, follow-ups, closings, channel split", "1 day"], ["Channel performance tracker", "UTM tags + lead source field", "Medium — needs disciplined source tagging on every lead", "Simple dashboard; review with Fium weekly to reallocate effort", "3–5 days"]]}]}
+{
+  "updated": "2026-10-16",
+  "tables": [
+    {
+      "id": "sales",
+      "title": "Sales",
+      "columns": [
+        "Goal",
+        "Existing AI options",
+        "Custom build (difficulty & cost)",
+        "Max-result recommendation",
+        "Est. time"
+      ],
+      "rows": [
+        [
+          "Build the company website with lead capture",
+          "Lovable, v0.dev, Framer (verify current pricing)",
+          "Easy — free options exist; medium if custom CMS",
+          "Paid builder with strong site skill (e.g. KIMI AI) or via Fium on demand",
+          "1–2 days"
+        ],
+        [
+          "Build the company brain (knowledge base)",
+          "Notion, Slab, Guru (verify pricing); RAG via any LLM",
+          "Medium — the hard part is structuring product data, not the tech",
+          "Central Notion/wiki as source of truth + RAG answers grounded on it",
+          "3–5 days"
+        ],
+        [
+          "Set up WhatsApp Business API (official channel)",
+          "WATI, Respond.io, SleekFlow (verify pricing)",
+          "Medium — BSP onboarding + webhook setup; ban-safe vs unofficial automation",
+          "Official BSP; never use unofficial WA automation (ban risk)",
+          "1–2 weeks"
+        ],
+        [
+          "Open distribution channel accounts",
+          "Instagram, TikTok, Facebook Page, YouTube, Rumah123, 99.co, OLX, Google Business",
+          "Easy — account setup + consistent branding kit",
+          "Prioritize IG + TikTok + Rumah123/99.co for property",
+          "2–3 days"
+        ],
+        [
+          "Sosmed content generator (on-demand via Fium)",
+          "ChatGPT, Claude, CapCut",
+          "Easy — prompt playbooks + brand voice doc",
+          "Via Fium on demand with a brand-voice skill; no new subscription needed",
+          "1–2 days setup"
+        ],
+        [
+          "Ad copy agent for Meta/Google Ads",
+          "Jasper, Copy.ai, Anyword (verify pricing)",
+          "Easy — hooks + offer angles from playbook",
+          "Via Fium on demand; dedicated tool only when ad volume scales",
+          "1 day"
+        ],
+        [
+          "SEO article agent (property blog)",
+          "Surfer, Frase (verify pricing)",
+          "Medium — needs keyword plan + review loop",
+          "Via Fium on demand, 2–4 articles/month to start",
+          "2–3 days setup"
+        ],
+        [
+          "WA lead qualifier bot (always-on)",
+          "WATI/Respond.io bots, ManyChat (verify pricing)",
+          "Medium — decision tree + link to company brain; escalates to manager",
+          "Always-on bot on official WA API; manager takes over qualified leads",
+          "1–2 weeks"
+        ],
+        [
+          "Website chatbot for Q&A + capture",
+          "Tidio, Intercom, Crisp (verify pricing)",
+          "Easy–Medium — ground answers on company brain",
+          "Lightweight widget; same brain as WA bot",
+          "3–5 days"
+        ],
+        [
+          "Follow-up sequence agent (always-on)",
+          "WATI/Respond.io sequences",
+          "Medium — timing rules + manager override on reply",
+          "Time-based WA sequences; stops the moment a lead replies",
+          "1 week"
+        ],
+        [
+          "Broadcast promo agent",
+          "WA API broadcast via BSP",
+          "Easy — segmented lists; manager approves copy first",
+          "Monthly promo blasts to segmented lists only (no spam)",
+          "2–3 days"
+        ],
+        [
+          "Proposal / quotation generator (on-demand via Fium)",
+          "PandaDoc, Proposify (verify pricing)",
+          "Easy — templates + live price tables",
+          "Via Fium on demand from approved template",
+          "2–3 days"
+        ],
+        [
+          "Payment scheme simulator (KPR / cash bertahap)",
+          "Spreadsheet or custom calculator",
+          "Easy — formulas + embed on website",
+          "Simple web calculator prospects can try themselves",
+          "2–4 days"
+        ],
+        [
+          "Meeting scheduler + reminders",
+          "Cal.com (free), Calendly",
+          "Easy — link on website + WA reminders",
+          "Cal.com + automatic WA reminder H-1",
+          "1–2 days"
+        ],
+        [
+          "Daily briefing agent (via Fium)",
+          "Fium (on demand)",
+          "Easy — pipeline sheet + morning prompt",
+          "Manager asks each morning: pipeline summary + today's follow-ups",
+          "1 day"
+        ],
+        [
+          "Objection-handling coach (via Fium)",
+          "Fium (on demand)",
+          "Easy — roleplay prompts from objection playbook",
+          "Roleplay sessions before big meetings",
+          "1 day"
+        ],
+        [
+          "Document checklist agent",
+          "Fium (on demand)",
+          "Easy — checklist per transaction type (KPR/cash)",
+          "Checklist in company brain; Fium verifies completeness",
+          "1–2 days"
+        ],
+        [
+          "Testimonial & referral agent",
+          "Fium (on demand)",
+          "Easy — request templates + tracking sheet",
+          "Ask after handover; track referrals per customer",
+          "1–2 days"
+        ],
+        [
+          "Weekly sales report generator (via Fium)",
+          "Fium (on demand)",
+          "Easy — reads pipeline data, writes summary",
+          "Manager gets every Monday: leads, follow-ups, closings, channel split",
+          "1 day"
+        ],
+        [
+          "Channel performance tracker",
+          "UTM tags + lead source field",
+          "Medium — needs disciplined source tagging on every lead",
+          "Simple dashboard; review with Fium weekly to reallocate effort",
+          "3–5 days"
+        ]
+      ]
+    }
+  ]
+}
