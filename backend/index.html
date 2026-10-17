@@ -203,7 +203,12 @@ function ghHeaders(){ return {'Authorization':'Bearer '+$('ghToken').value.trim(
 function b64utf8(s){ return btoa(unescape(encodeURIComponent(s))); }
 async function ghSave(){
   const token=$('ghToken').value.trim();
-  if(!token){ ghStatus('Isi GitHub token dulu (tersimpan hanya di browser ini).'); return; }
+  if(!token){
+    ghStatus('⚠ Isi GitHub token dulu di kolom "GitHub token" di atas — tanpa token, browser tidak bisa commit ke GitHub.');
+    const f=$('ghToken'); f.style.border='2px solid #a83e34'; f.focus();
+    const card=$('ghCard'); if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   if($('editor').classList.contains('hidden')){ ghStatus('Load data dulu sebelum save.'); return; }
   const parts=$('ghRepo').value.trim().split('/');
   if(parts.length!==2){ ghStatus('Format repo harus owner/name.'); return; }
@@ -228,6 +233,7 @@ async function ghSave(){
 }
 $('ghSaveBtn').onclick=ghSave;
 try{ const t=localStorage.getItem(GH_TOKEN_KEY); if(t) $('ghToken').value=t; }catch(e){}
+$('ghToken').addEventListener('input',e=>{ e.target.style.border=''; });
 $('downloadBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
