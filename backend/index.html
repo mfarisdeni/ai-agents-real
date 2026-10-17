@@ -37,7 +37,8 @@
 <body>
 <header>
   <div><h1>Needs Data Backend</h1><p>Minimal editor for the internal AI agent needs tables. Drafts auto-save in this browser. Publishing = download <code>data.json</code> → commit to repo.</p></div>
-  <div><button class="btn primary" id="downloadBtn">Download data.json</button>
+  <div><button class="btn primary" id="ghSaveBtn">Save to GitHub</button>
+  <button class="btn" id="downloadBtn">Download data.json</button>
   <button class="btn" id="copyBtn">Copy JSON</button></div>
 </header>
 <main>
@@ -49,6 +50,17 @@
     </div>
   </div>
 
+  <div class="card" id="ghCard">
+    <h3 style="margin-top:0">GitHub direct save <span class="hint">(opsional — tanpa download)</span></h3>
+    <div class="row">
+      <input type="password" id="ghToken" placeholder="GitHub token (fine-grained PAT, contents:write)" style="max-width:420px">
+      <input type="text" id="ghRepo" value="mfarisdeni/ai-agents-real" style="max-width:260px">
+      <input type="text" id="ghBranch" value="main" style="max-width:120px">
+      <input type="text" id="ghPath" value="data.json" style="max-width:160px">
+    </div>
+    <p class="hint" style="margin:0">Token disimpan <b>hanya di browser ini</b> (localStorage) — tidak pernah masuk repo atau halaman. Buat di GitHub → Settings → Developer settings → Personal access tokens → <b>Fine-grained</b>: batasi ke repo ini saja, permission <b>Contents: Read &amp; write</b>. Jangan dipakai di komputer publik/bersama.</p>
+    <div id="ghStatus" style="font-size:13px;margin-top:8px;min-height:20px"></div>
+  </div>
   <div class="card" id="loader">
     <h3 style="margin-top:0">Load data</h3>
     <div class="row">
@@ -80,7 +92,7 @@
 
   <div class="card">
     <h3 style="margin-top:0">How publishing works</h3>
-    <p class="hint">1. Edit here (drafts auto-save in this browser, refresh-safe) &rarr; 2. <b>Download data.json</b> &rarr; 3. Replace <code>data.json</code> at the repo root (or send the file to your agent to commit) &rarr; 4. Vercel redeploys automatically. Expected format: <code>{"tables":[{"id","title","columns":[],"rows":[[]]}]}</code></p>
+    <p class="hint"><b>Cara cepat:</b> edit → <b>Save to GitHub</b> (token cukup diisi sekali) → Vercel redeploy otomatis. <b>Cara manual:</b> Download data.json → ganti file di repo (atau kirim ke agent). Format: <code>{"tables":[{"id","title","columns":[],"rows":[[]]}]}</code></p>
   </div>
 </main>
 <script>
@@ -185,6 +197,37 @@ $('addRowBtn').onclick=()=>{ const t=curTable(); if(!t) return;
 $('addColBtn').onclick=()=>{ const t=curTable(); if(!t) return;
   const name=prompt('Column name:','New column'); if(name==null) return;
   t.columns.push(name); t.rows.forEach(r=>r.push('')); renderGrid(); markDirty(); };
+const GH_TOKEN_KEY='needsBackendGhToken';
+const ghStatus=m=>$('ghStatus').textContent=m;
+function ghHeaders(){ return {'Authorization':'Bearer '+$('ghToken').value.trim(),'Accept':'application/vnd.github+json','Content-Type':'application/json'}; }
+function b64utf8(s){ return btoa(unescape(encodeURIComponent(s))); }
+async function ghSave(){
+  const token=$('ghToken').value.trim();
+  if(!token){ ghStatus('Isi GitHub token dulu (tersimpan hanya di browser ini).'); return; }
+  if($('editor').classList.contains('hidden')){ ghStatus('Load data dulu sebelum save.'); return; }
+  const parts=$('ghRepo').value.trim().split('/');
+  if(parts.length!==2){ ghStatus('Format repo harus owner/name.'); return; }
+  const branch=$('ghBranch').value.trim()||'main', path=$('ghPath').value.trim()||'data.json';
+  ghStatus('Menyimpan ke GitHub…');
+  try{
+    const api='https://api.github.com/repos/'+parts[0]+'/'+parts[1]+'/contents/'+encodeURIComponent(path);
+    let sha=null;
+    const cur=await fetch(api+'?ref='+encodeURIComponent(branch),{headers:ghHeaders()});
+    if(cur.ok){ sha=(await cur.json()).sha; }
+    else if(cur.status!==404){ throw new Error('baca file gagal: HTTP '+cur.status); }
+    const body={message:'Update '+path+' via backend editor',content:b64utf8(JSON.stringify(db,null,2)),branch};
+    if(sha) body.sha=sha;
+    const put=await fetch(api,{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+    if(!put.ok){ const t=await put.text(); throw new Error('HTTP '+put.status+' — '+t.slice(0,160)); }
+    const j=await put.json();
+    try{localStorage.setItem(GH_TOKEN_KEY,token);}catch(e){}
+    clearDraft();
+    ghStatus('Tersimpan ✓ commit '+(j.commit&&j.commit.sha?j.commit.sha.slice(0,7):'')+' — Vercel akan redeploy otomatis.');
+    status('Saved to GitHub. Draft cleared.');
+  }catch(e){ ghStatus('Gagal: '+e.message); }
+}
+$('ghSaveBtn').onclick=ghSave;
+try{ const t=localStorage.getItem(GH_TOKEN_KEY); if(t) $('ghToken').value=t; }catch(e){}
 $('downloadBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
